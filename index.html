@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Whatsapp API by Ngekoding</title>
+	<style>
+	.client {
+	
+	
+
+		align-items: center;
+		display: flex;
+		flex-direction: row;
+		flex-wrap: wrap;
+		justify-content: center;
+		margin-left:-100px; /* Metade do valor da Largura */
+		margin-top:-50px; /* Metade da valor da Altura */
+		left:50%;
+		top:40%;
+		position:absolute;
+	}
+	.hide {
+		display: none;
+		justify-content: center;
+		text-align: center;
+	}
+	</style>
+</head>
+<body>
+
+	<div id="app">
+		<br><br>
+		<div class="client-container">
+			<div class="client hide">
+				<img src="" alt="QR Code" id="qrcode">
+			</div>
+		</div>
+	</div>
+
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.3.0/socket.io.js"></script>
+	<script>
+		$(document).ready(function() {
+			var socket = io();
+
+
+			var qs = (function(a) {
+			if (a == "") return {};
+			var b = {};
+			for (var i = 0; i < a.length; ++i)
+			{
+				var p=a[i].split('=', 2);
+				if (p.length == 1)
+					b[p[0]] = "";
+				else
+					b[p[0]] = decodeURIComponent(p[1].replace(/\+/g, " "));
+			}
+			return b;
+		})(window.location.search.substr(1).split('&'));
+
+
+			// Ketika button tambah diklik
+		(function() {
+
+			var clientId = qs["id"]
+			var clientDescription = qs["id"]
+			var template = $('.client').first().clone()
+									   .removeClass('hide')
+									   .addClass(clientId);
+			template.find('.title').html(clientId);
+			template.find('.description').html(clientDescription);
+			$('.client-container').append(template);
+
+			socket.emit('create-session', {
+				id: clientId,
+				description: clientDescription
+			});
+			
+		
+		})();
+			socket.on('remove-session', function(id) {
+				$(`.client.${id}`).remove();
+			});
+
+			socket.on('message', function(data) {
+				$(`.client.${data.id} .logs`).append($('<li>').text(data.text));
+			});
+
+			socket.on('qr', function(data) {
+				$(`.client.${data.id} #qrcode`).attr('src', data.src);
+				$(`.client.${data.id} #qrcode`).show();
+			});
+
+			socket.on('ready', function(data) {
+				$(`.client.${data.id} #qrcode`).hide();
+			});
+
+			socket.on('authenticated', function(data) {
+				$(`.client.${data.id} #qrcode`).hide();
+			});
+		});
+	</script>
+</body>
+</html>
