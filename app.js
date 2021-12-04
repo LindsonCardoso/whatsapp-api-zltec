@@ -202,23 +202,31 @@ app.post('/teste', (req, res) => {
   console.log(sender, number, message);
 })
 
-app.get('/validar', (req, res) => {
+app.get('/validar-numero', async (req, res) => {
   const sender = req.body.sender;
   const number = phoneNumberFormatter(req.body.number);
   const client = sessions.find(sess => sess.id == sender).client;
 
-  client.getNumberId(number).then(function(isRegistered) {
-    if(isRegistered){
-      res.send({'mensagem':  'True', 'number': number});
-    } else {
-      res.send({'mensagem':  isRegistered, 'number': number})
-    }
-  }).catch(err => {
-    res.status(500).json({
-      status: false,
-      response: err
+
+    client.getNumberId(number).then(async function(isRegistered) {
+      if(isRegistered){
+        const nome = await client.getContactById(number)
+        var inforTrue = {'mensagem':  'True','nome': nome.pushname, 'number': number}
+        res.send(inforTrue);
+      } else {
+        var inforFalse = {'mensagem':  isRegistered, 'number': number}
+        res.send(inforFalse)
+      }
+    }).catch(err => {
+      res.status(500).json({
+        status: false,
+        response: err
+      });
     });
-  });
+
+
+
+  
 });
 
 app.post('/send-message', (req, res) => {
@@ -240,7 +248,7 @@ app.post('/send-message', (req, res) => {
   });
 });
 
-app.get('/status', (req, res) => {
+app.get('/status-client', (req, res) => {
 
   const sender = req.body.sender;
   const client = sessions.find(sess => sess.id == sender).client;
@@ -259,6 +267,82 @@ app.get('/status', (req, res) => {
   });
 
 
+})
+
+app.get('/status-whatsapp', (req, res) => {
+
+  const sender = req.body.sender;
+  const number = phoneNumberFormatter(req.body.number)
+  const client = sessions.find(sess => sess.id == sender).client;
+
+  client.Status(number).then(function(result){
+    if(result) {
+      res.send({'mensagem':  result});
+    }
+  }).catch(err => {
+    res.status(500).json({
+      status: false,
+      response: err
+    });
+  });
+
+
+})
+
+app.get('/reset-instancia', (req, res) => {
+
+  const sender = req.body.sender;
+  //const number = phoneNumberFormatter(req.body.number)
+  const client = sessions.find(sess => sess.id == sender).client;
+
+  client.resetState().then(function(result){
+    if(result) {
+      res.send({'mensagem':  result});
+    }
+  }).catch(err => {
+    res.status(500).json({
+      status: false,
+      response: err
+    });
+  });
+
+
+})
+
+app.get('/clientInfo', async (req, res) => {
+  const sender = req.body.sender;
+  const number = phoneNumberFormatter(req.body.number)
+  const client = sessions.find(sess => sess.id == sender).client;
+  
+  client.getContactById (number).then( async function(result){
+    if (result) {
+      let contactInfo = await result;
+      console.log(contactInfo.pushname)
+     res.send(contactInfo.pushname);
+  } else {
+      res.send({'mensagem':  `ERROR = ${result}`})
+    }
+  }).catch(err => {
+    res.status(500).json({
+      status: false,
+      response: err
+    });
+  });
+
+  /*client.getContacts().then( async function(result){
+    if (result) {
+      let contactInfo = await result;
+      // do stuff here
+     res.send(contactInfo);
+  } else {
+      res.send({'mensagem':  `ERROR = ${result}`})
+    }
+  }).catch(err => {
+    res.status(500).json({
+      status: false,
+      response: err
+    });
+  });*/
 })
 
 
