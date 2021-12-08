@@ -211,7 +211,7 @@ app.get('/validar-numero', async (req, res) => {
     client.getNumberId(number).then(async function(isRegistered) {
       if(isRegistered){
         const nome = await client.getContactById(number)
-        var inforTrue = {'mensagem':  'True','nome': nome.pushname, 'number': number}
+        var inforTrue = {'mensagem':  'True','nome': nome.pushname || nome.verifiedName, 'number': number}
         res.send(inforTrue);
       } else {
         var inforFalse = {'mensagem':  isRegistered, 'number': number}
@@ -247,6 +247,8 @@ app.post('/send-message', (req, res) => {
     });
   });
 });
+
+
 
 app.get('/status-client', (req, res) => {
 
@@ -290,11 +292,9 @@ app.get('/status-whatsapp', (req, res) => {
 })
 
 app.get('/reset-instancia', (req, res) => {
-
   const sender = req.body.sender;
   //const number = phoneNumberFormatter(req.body.number)
   const client = sessions.find(sess => sess.id == sender).client;
-
   client.resetState().then(function(result){
     if(result) {
       res.send({'mensagem':  result});
@@ -305,20 +305,18 @@ app.get('/reset-instancia', (req, res) => {
       response: err
     });
   });
-
-
 })
 
-app.get('/clientInfo', async (req, res) => {
+app.get('/client-info', async (req, res) => {
   const sender = req.body.sender;
   const number = phoneNumberFormatter(req.body.number)
   const client = sessions.find(sess => sess.id == sender).client;
   
-  client.getContactById (number).then( async function(result){
+  client.getContactById(number).then( async function(result){
     if (result) {
       let contactInfo = await result;
       console.log(contactInfo.pushname)
-     res.send(contactInfo.pushname);
+     res.send(contactInfo);
   } else {
       res.send({'mensagem':  `ERROR = ${result}`})
     }
@@ -328,6 +326,8 @@ app.get('/clientInfo', async (req, res) => {
       response: err
     });
   });
+
+
 
   /*client.getContacts().then( async function(result){
     if (result) {
@@ -345,6 +345,27 @@ app.get('/clientInfo', async (req, res) => {
   });*/
 })
 
+
+app.get('/getLabels', async (req, res) => {
+  const sender = req.body.sender;
+  const number = phoneNumberFormatter(req.body.number)
+  const client = sessions.find(sess => sess.id == sender).client;
+  
+  client.isRegisteredUser(number).then( async function(result){
+    if (result) {
+      let contactInfo = await result;
+      //console.log(contactInfo.pushname)
+     res.send(contactInfo);
+  } else {
+      res.send({'mensagem':  `ERROR = ${result}`})
+    }
+  }).catch(err => {
+    res.status(500).json({
+      status: false,
+      response: err
+    });
+  });
+})
 
 server.listen(port, function() {
   console.log('App running on *: ' + port);
